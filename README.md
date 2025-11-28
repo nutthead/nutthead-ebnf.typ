@@ -14,13 +14,13 @@ A Typst package for rendering Extended Backus-Naur Form (EBNF) grammars with cus
   prod(
     n[Expression],
     {
-      alt[#n[Term] #rep[#t[+] #n[Term]]][arithmetic expression]
+      alt[#n[Term] #rep[#t[\+] #n[Term]]][arithmetic expression]
     },
   ),
   prod(
     n[Term],
     {
-      alt[#n[Factor] #rep[#t[*] #n[Factor]]][multiplication]
+      alt[#n[Factor] #rep[#t[\*] #n[Factor]]][multiplication]
     },
   ),
 )
@@ -118,7 +118,10 @@ No colors applied (all elements use default text color).
   comment: rgb("#808080"),
 )
 
-#ebnf(colors: my-colors, ...)
+#ebnf(
+  colors: my-colors,
+  prod(n[S], { alt[#t[a] #n[B]][example] }),
+)
 ```
 
 ## Comments
