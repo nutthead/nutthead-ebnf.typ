@@ -50,7 +50,9 @@
 } else { content }
 
 #let _wrap-op(left, right, content, suffix: none) = context {
-  let c = _ebnf-state.get().colors.at("operator", default: none)
+  let state = _ebnf-state.get()
+  let c = state.colors.at("operator", default: none)
+  set text(font: state.mono-font) if state.mono-font != none
   if suffix != none {
     [#_styled(c, left)#content#_styled(c, right)#_styled(c, suffix)]
   } else { [#_styled(c, left)#content#_styled(c, right)] }
@@ -58,9 +60,11 @@
 
 #let _colorize(role, content) = context {
   let state = _ebnf-state.get()
-  let styled-content = if role == "annot" and state.body-font != none {
-    text(font: state.body-font, content)
-  } else { content }
+  let styled-content = if role == "annot" {
+    if state.body-font != none { text(font: state.body-font, content) } else { content }
+  } else {
+    if state.mono-font != none { text(font: state.mono-font, content) } else { content }
+  }
   _styled(state.colors.at(role, default: none), styled-content)
 }
 
@@ -166,22 +170,25 @@
 #let Grp(content) = _wrap-op("(", ")", content)
 
 /// Terminal symbol
-#let T(content) = context _styled(
-  _ebnf-state.get().colors.at("terminal", default: none),
-  content,
-)
+#let T(content) = context {
+  let state = _ebnf-state.get()
+  set text(font: state.mono-font) if state.mono-font != none
+  _styled(state.colors.at("terminal", default: none), content)
+}
 
 /// Non-terminal reference (italic)
-#let N(content) = context _styled(
-  _ebnf-state.get().colors.at("nonterminal", default: none),
-  emph(content),
-)
+#let N(content) = context {
+  let state = _ebnf-state.get()
+  set text(font: state.mono-font) if state.mono-font != none
+  _styled(state.colors.at("nonterminal", default: none), emph(content))
+}
 
 /// Non-terminal in angle brackets: `⟨content⟩`
-#let NT(content) = context _styled(
-  _ebnf-state.get().colors.at("nonterminal", default: none),
-  [⟨#emph(content)⟩],
-)
+#let NT(content) = context {
+  let state = _ebnf-state.get()
+  set text(font: state.mono-font) if state.mono-font != none
+  _styled(state.colors.at("nonterminal", default: none), [⟨#emph(content)⟩])
+}
 
 /// Alternative in a production
 #let Or(var, annot) = (var, annot)
@@ -238,18 +245,13 @@
 
   let cells = prods
     .enumerate()
-    .map(((idx, prod)) => _prod-to-rows(idx, prod, production-spacing))
-    .flatten()
-    .flatten()
+    .map(((idx, prod)) => _prod-to-rows(idx, prod, production-spacing).flatten())
+    .join()
 
-  let result = grid(columns: 4, align: (
+  grid(columns: 4, align: (
       left,
       center,
       left,
       left,
     ), column-gutter: column-gap, row-gutter: row-gap, ..cells)
-  if mono-font != none {
-    set text(font: mono-font)
-    result
-  } else { result }
 }
