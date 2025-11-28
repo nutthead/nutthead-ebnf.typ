@@ -21,9 +21,7 @@
 // Layout constants
 #let _error-text-size = 0.9em
 #let _production-spacing = 0.5em
-/// Default horizontal spacing between grid columns (LHS, delimiter, RHS, annotation)
 #let _column-gap = 0.75em
-/// Default vertical spacing between grid rows (individual production alternatives)
 #let _row-gap = 0.5em
 
 #let _color-keys = (
@@ -34,16 +32,19 @@
   "delim",
   "annot",
 )
+
 #let _ebnf-state = state("ebnf", (
   mono-font: none,
   body-font: none,
   colors: colors-colorful,
 ))
+
 #let _error(msg) = text(
   fill: red,
   weight: "bold",
   size: _error-text-size,
 )[⚠ EBNF Error: #msg]
+
 #let _styled(color, content) = if color != none {
   text(fill: color, content)
 } else { content }
@@ -53,6 +54,23 @@
   if suffix != none {
     [#_styled(c, left)#content#_styled(c, right)#_styled(c, suffix)]
   } else { [#_styled(c, left)#content#_styled(c, right)] }
+}
+
+#let _colorize(role, content) = context {
+  let state = _ebnf-state.get()
+  let styled-content = if role == "annot" and state.body-font != none {
+    text(font: state.body-font, content)
+  } else { content }
+  _styled(state.colors.at(role, default: none), styled-content)
+}
+
+#let _validate-fonts(mono-font, body-font) = {
+  for (name, val) in (("mono-font", mono-font), ("body-font", body-font)) {
+    if val != none and type(val) != str {
+      return (false, name + " must be string or none")
+    }
+  }
+  (true, none)
 }
 
 #let _validate-colors(colors) = {
@@ -82,24 +100,83 @@
   (true, none)
 }
 
+#let _validate-prods(prods) = {
+  if prods.len() == 0 {
+    return (false, "no productions provided")
+  }
+  for (i, p) in prods.enumerate() {
+    let (ok, err) = _validate-prod(p, i + 1)
+    if not ok { return (false, err) }
+  }
+  (true, none)
+}
+
+#let _prod-to-rows(idx, prod, production-spacing) = {
+  let (lhs, delim, alts, annot) = prod
+  let delim = if delim == auto { "::=" } else { delim }
+
+  // Determine annotation strategy
+  let first-annot = alts.at(0).at(1)
+  let multi-annot = alts.len() > 1 and alts.slice(1).any(a => a.at(1) != none)
+
+  // Helper: create a full-width annotation row
+  let annot-row(c) = (
+    grid.cell(colspan: 4, if idx > 0 {
+      [#v(production-spacing)#_colorize("annot", c)]
+    } else { _colorize("annot", c) }),
+  )
+
+  let rows = ()
+
+  // Add production-level annotation
+  if annot != none { rows.push(annot-row(annot)) }
+
+  // Add first alternative's annotation (only if single-annotation mode)
+  if first-annot != none and not multi-annot {
+    rows.push(annot-row(first-annot))
+  }
+
+  // Add alternative rows
+  for (i, (rhs, rhs-annot)) in alts.enumerate() {
+    let acol = if rhs-annot != none and multi-annot {
+      _colorize("annot", rhs-annot)
+    } else { [] }
+
+    let row = if i == 0 {
+      (_colorize("lhs", lhs), _colorize("delim", delim), rhs, acol)
+    } else {
+      ([], _colorize("delim", "|"), rhs, acol)
+    }
+    rows.push(row)
+  }
+
+  rows
+}
+
 /// Optional: `[content]`
 #let Opt(content) = _wrap-op("[", "]", content)
+
 /// Repetition (zero or more): `{content}`
 #let Rep(content) = _wrap-op("{", "}", content)
+
 /// Repetition (one or more): `{content}+`
 #let Rep1(content) = _wrap-op("{", "}", content, suffix: "+")
+
 /// Grouping: `(content)`
 #let Grp(content) = _wrap-op("(", ")", content)
+
 /// Terminal symbol
 #let T(content) = context _styled(
   _ebnf-state.get().colors.at("terminal", default: none),
   content,
 )
+
 /// Non-terminal reference (italic)
 #let N(content) = context _styled(
   _ebnf-state.get().colors.at("nonterminal", default: none),
   emph(content),
 )
+
 /// Non-terminal in angle brackets: `⟨content⟩`
 #let NT(content) = context _styled(
   _ebnf-state.get().colors.at("nonterminal", default: none),
@@ -143,58 +220,25 @@
   row-gap: _row-gap,
   ..body,
 ) = {
-  for (name, val) in (("mono-font", mono-font), ("body-font", body-font)) {
-    if val != none and type(val) != str {
-      return _error(name + " must be string or none")
-    }
-  }
+  let (ok, err) = _validate-fonts(mono-font, body-font)
+  if not ok { return _error(err) }
+
   let (ok, err) = _validate-colors(colors)
   if not ok { return _error(err) }
+
   let prods = body.pos()
-  if prods.len() == 0 { return _error("no productions provided") }
-  for (i, p) in prods.enumerate() {
-    let (ok, err) = _validate-prod(p, i + 1)
-    if not ok { return _error(err) }
-  }
+  let (ok, err) = _validate-prods(prods)
+  if not ok { return _error(err) }
 
   _ebnf-state.update((
     mono-font: mono-font,
     body-font: body-font,
     colors: colors,
   ))
-  let colorize(role, content) = _styled(colors.at(role, default: none), if role
-    == "annot"
-    and body-font != none { text(font: body-font, content) } else { content })
 
   let cells = prods
     .enumerate()
-    .map(((idx, prod)) => {
-      let (lhs, delim, alts, annot) = prod
-      let delim = if delim == auto { "::=" } else { delim }
-      let first-annot = alts.at(0).at(1)
-      let multi-annot = (
-        alts.len() > 1 and alts.slice(1).any(a => a.at(1) != none)
-      )
-      let annot-row(c) = (
-        grid.cell(colspan: 4, if idx > 0 {
-          [#v(production-spacing)#colorize("annot", c)]
-        } else { colorize("annot", c) }),
-      )
-      let rows = ()
-      if annot != none { rows.push(annot-row(annot)) }
-      if first-annot != none and not multi-annot {
-        rows.push(annot-row(first-annot))
-      }
-      for (i, (rhs, rhs-annot)) in alts.enumerate() {
-        let acol = if rhs-annot != none and multi-annot {
-          colorize("annot", rhs-annot)
-        } else { [] }
-        rows.push(if i == 0 {
-          (colorize("lhs", lhs), colorize("delim", delim), rhs, acol)
-        } else { ([], colorize("delim", "|"), rhs, acol) })
-      }
-      rows
-    })
+    .map(((idx, prod)) => _prod-to-rows(idx, prod, production-spacing))
     .flatten()
     .flatten()
 
