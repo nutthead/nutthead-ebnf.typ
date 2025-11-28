@@ -6,6 +6,7 @@
   operator: none,
   delim: none,
   annot: none,
+  comment: none,
 )
 
 /// Colorful color scheme (default)
@@ -16,6 +17,7 @@
   operator: rgb("#a51d2d"),
   delim: rgb("#5e5c64"),
   annot: rgb("#986a44"),
+  comment: rgb("#5e5c64"),
 )
 
 // Layout constants
@@ -31,6 +33,7 @@
   "operator",
   "delim",
   "annot",
+  "comment",
 )
 
 #let _ebnf-state = state("ebnf", (
@@ -188,6 +191,44 @@
   let state = _ebnf-state.get()
   set text(font: state.mono-font) if state.mono-font != none
   _styled(state.colors.at("nonterminal", default: none), [⟨#emph(content)⟩])
+}
+
+/// Exception: `a - b` (a except b)
+#let exc(a, b) = context {
+  let state = _ebnf-state.get()
+  set text(font: state.mono-font) if state.mono-font != none
+  [#a #_styled(state.colors.at("operator", default: none), "−") #b]
+}
+
+/// Concatenation sequence: `a , b , c`
+#let seq(..items) = context {
+  let state = _ebnf-state.get()
+  set text(font: state.mono-font) if state.mono-font != none
+  let sep = [#_styled(state.colors.at("operator", default: none), ",") ]
+  items.pos().join(sep)
+}
+
+/// Repetition with count: `n * content`
+#let times(count, content) = context {
+  let state = _ebnf-state.get()
+  set text(font: state.mono-font) if state.mono-font != none
+  [#_styled(state.colors.at("operator", default: none), str(count) + " ∗") #content]
+}
+
+/// Special sequence: `? text ?`
+#let special(content) = _wrap-op("?", "?", content)
+
+/// Comment: `(* text *)`
+#let ebnf-comment(content) = context {
+  let state = _ebnf-state.get()
+  _styled(state.colors.at("comment", default: none), [(\* #content \*)])
+}
+
+/// Empty/epsilon: `ε`
+#let empty = context {
+  let state = _ebnf-state.get()
+  set text(font: state.mono-font) if state.mono-font != none
+  _styled(state.colors.at("terminal", default: none), "ε")
 }
 
 /// Alternative in a production
