@@ -2,7 +2,13 @@
 
 A Typst package for rendering Extended Backus-Naur Form (EBNF) grammars with customizable fonts and color schemes. Fully compliant with ISO 14977.
 
+## Java Grammar Example
+
 ![Java grammar example](examples/java.svg)
+
+## ISO 14977 Grammar Example
+
+![ISO 14977 grammar example](examples/iso-14977.svg)
 
 ## Usage
 
