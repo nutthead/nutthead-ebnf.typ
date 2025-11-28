@@ -158,43 +158,43 @@
 }
 
 /// Optional: `[content]`
-#let Opt(content) = _wrap-op("[", "]", content)
+#let opt(content) = _wrap-op("[", "]", content)
 
 /// Repetition (zero or more): `{content}`
-#let Rep(content) = _wrap-op("{", "}", content)
+#let rep(content) = _wrap-op("{", "}", content)
 
 /// Repetition (one or more): `{content}+`
-#let Rep1(content) = _wrap-op("{", "}", content, suffix: "+")
+#let rep-1(content) = _wrap-op("{", "}", content, suffix: "+")
 
 /// Grouping: `(content)`
-#let Grp(content) = _wrap-op("(", ")", content)
+#let grp(content) = _wrap-op("(", ")", content)
 
 /// Terminal symbol
-#let T(content) = context {
+#let t(content) = context {
   let state = _ebnf-state.get()
   set text(font: state.mono-font) if state.mono-font != none
   _styled(state.colors.at("terminal", default: none), content)
 }
 
 /// Non-terminal reference (italic)
-#let N(content) = context {
+#let n(content) = context {
   let state = _ebnf-state.get()
   set text(font: state.mono-font) if state.mono-font != none
   _styled(state.colors.at("nonterminal", default: none), emph(content))
 }
 
 /// Non-terminal in angle brackets: `⟨content⟩`
-#let NT(content) = context {
+#let nt(content) = context {
   let state = _ebnf-state.get()
   set text(font: state.mono-font) if state.mono-font != none
   _styled(state.colors.at("nonterminal", default: none), [⟨#emph(content)⟩])
 }
 
 /// Alternative in a production
-#let Or(var, annot) = (var, annot)
+#let alt(var, annot) = (var, annot)
 
 /// Production rule
-#let Prod(lhs, annot: none, delim: auto, ..rhs) = {
+#let prod(lhs, annot: none, delim: auto, ..rhs) = {
   (
     lhs,
     delim,
