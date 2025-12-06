@@ -189,6 +189,10 @@ For inline comments within the RHS, use `comment[...]`.
 )
 ```
 
+## References
+
+- [ISO 14977 Specification (PDF)](https://www.cl.cam.ac.uk/~mgk25/iso-14977.pdf)
+
 ## License
 
 MIT
