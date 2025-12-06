@@ -4,24 +4,27 @@
 // Default symbols (Section 4)
 #let _concatenate-sym = state("nutthead.ebnf.concatenate-sym", ",")
 #let _defining-sym = state("nutthead.ebnf.defining-sym", " = ")
-#let _definition-separator-sym = state("nutthead.ebnf.definition-separator-sym", "|")
-#let _end-comment-sym = state("nutthead.ebnf.end-comment-sym", "*)")
-#let _end-group-sym = state("nutthead.ebnf.end-group-sym", ")")
-#let _end-option-sym = state("nutthead.ebnf.end-option-sym", "]")
-#let _end-repeat-sym = state("nutthead.ebnf.end-repeat-sym", "}")
 #let _except-sym = state("nutthead.ebnf.except-sym", "-")
 #let _first-quote-sym = state("nutthead.ebnf.first-quote-sym", "`")
 #let _repetition-sym = state("nutthead.ebnf.def-sym", super[\*])
 #let _second-quote-sym = state("nutthead.ebnf.second-quote-sym", "\"")
 #let _special-sequence-sym = state("nutthead.ebnf.special-sequence-sym", super[?])
-#let _start-comment-sym = state("nutthead.ebnf.start-comment-sym", "(*")
-#let _start-group-sym = state("nutthead.ebnf.start-group-sym", "(")
-#let _start-option-sym = state("nutthead.ebnf.start-option-sym", "[")
-#let _start-repeat-sym = state("nutthead.ebnf.start-repeat-sym", "{")
 #let _terminator-sym = state("nutthead.ebnf.defining-sym", ";")
 
+#let _definition-separator-sym = state("nutthead.ebnf.definition-separator-sym", "|")
+
+// EBNF sequences
+#let _start-comment-sym = state("nutthead.ebnf.start-comment-sym", "(*")
+#let _end-comment-sym = state("nutthead.ebnf.end-comment-sym", "*)")
+#let _start-repeat-sym = state("nutthead.ebnf.start-repeat-sym", "{")
+#let _end-repeat-sym = state("nutthead.ebnf.end-repeat-sym", "}")
+#let _start-group-sym = state("nutthead.ebnf.start-group-sym", "(")
+#let _end-group-sym = state("nutthead.ebnf.end-group-sym", ")")
+#let _start-option-sym = state("nutthead.ebnf.start-option-sym", "[")
+#let _end-option-sym = state("nutthead.ebnf.end-option-sym", "]")
+
 // Default padding
-#let _pad = state("nutthead.ebnf.pad", 1em)
+#let _pad_symbol = state("nutthead.ebnf.pad", 1em)
 
 // Default fonts
 #let _monospaced-font = state("nutthead.ebnf.defining-monospaced-font", "DejaVu Sans Mono")
@@ -69,20 +72,20 @@
 }
 
 // Helper padding function
-#let _pads(count) = {
+#let _padding(count) = {
   context {
     if count == none {
       return none
     } else if count == auto {
-      return h(_pad.get() + 0.5em)
+      return h(_pad_symbol.get() + 0.5em)
     } else {
-      return h(_pad.get() * count + 0.5em)
+      return h(_pad_symbol.get() * count + 0.5em)
     }
   }
 }
 
-// Enclose body within left and right text
-#let _enclose(left: none, right: auto, body) = {
+// Helper function to enclose body within left and right text
+#let _enclose(left: none, right: auto, pads: none, body) = {
   context {
     let _left = left
     let _right
@@ -107,9 +110,21 @@
       _right = right
     }
 
-    _left + body + _right
+    _padding(pads) + _left + body + _right
   }
 }
+
+// Helper function for defining sequences
+#let _ebnf-sequence-factory(start-sym) = _ebnf-guard((pads: none, body) => {
+  context {
+    // 1. Normalize and pad (Logic shared by all sequences)
+    let _body = _normalize-body(body)
+  
+    // 2. Enclose using the specific symbol passed to the factory
+    _enclose(left: start-sym.get(), pads: pads, _body)
+  }
+})
+
 
 // EBNF defining-symbol (Section 4)
 #let ebnf-defining-symbol = _ebnf-guard(() => {
@@ -126,15 +141,9 @@
 })
 
 // EBNF non-terminal-symbol (Section 3.3)
-#let ebnf-nonterminal = _ebnf-guard((pad: none, special: false, body) => {
+#let ebnf-nonterminal = _ebnf-guard((pads: none, special: false, body) => {
   context {
-    let _pad = if pad == auto {
-       h(_pad.get()) 
-    } else if pad == none {
-       h(0em) 
-    } else {
-      h(_pad.get() * pad)
-    }
+    let _pad = _padding(pads)
 
     if special == true {
       _pad
@@ -154,23 +163,25 @@
   }
 })
 
-// EBNF optional-sequence
-#let ebnf-optional-sequence = _ebnf-guard((pad: none, body) => {
-  context {
-    let _body = _normalize-body(body)
-    let _pad = _pads(pad)
-  
-    _enclose(left: _start-option-sym.get(), _pad + _body)
-  }
-})
+// EBNF comment (Section 5.4)
+#let ebnf-bracketed-comment = _ebnf-sequence-factory(_start-comment-sym)
 
-// EBNF group-sequence
-#let ebnf-group-sequence = _ebnf-guard((pad: none, body) => {
+// EBNF grouped-sequence (Section 5.4)
+#let ebnf-grouped-sequence = _ebnf-sequence-factory(_start-group-sym)
+
+// EBNF optional-sequence (Section 5.5)
+#let ebnf-optional-sequence = _ebnf-sequence-factory(_start-option-sym)
+
+// EBNF repeated-sequence (Section 5.6)
+#let ebnf-repeated-sequence = _ebnf-sequence-factory(_start-repeat-sym)
+
+// EBNF definitions `Foo | Bar | Baz`
+#let ebnf-definitions = _ebnf-guard(body => {
   context {
-    let _body = _normalize-body(body)
-    let _pad = _pads(pad)
-  
-    _pad + _enclose(left: _start-group-sym.get(), _body)
+    if not body.has("children") { return body }
+    let kids = body.children.filter(it => it != [ ] and it != parbreak())
+    let _separator = [ #_definition-separator-sym.get() ]
+    kids.join(_separator)
   }
 })
 
@@ -178,7 +189,7 @@
 #let ebnf-syntax-rule = _ebnf-guard((rhs-break: false, pad: none, rhs, body) => {
   context {
     let _body = _normalize-body(body)
-    let _pad = if pad == auto { h(_pad.get()) } else { h(pad * pad) }
+    let _pad = if pad == auto { h(_pad_symbol.get()) } else { h(pad * pad) }
 
     emph(rhs) + if rhs-break { linebreak() } else { "" }
     _pad
@@ -208,11 +219,13 @@
     [```typ #ebnf-defining-symbol()```], [#ebnf-defining-symbol()],
     [```typ #ebnf-special-sequence-symbol()```], [#ebnf-special-sequence-symbol()],
     [```typ 
-    #ebnf-group-sequence()[
+    #ebnf-grouped-sequence()[
       #ebnf-nonterminal(special: true)[GenericParams]
     ]
     ```], 
-    [#ebnf-group-sequence()[#ebnf-nonterminal(special: true)[GenericParams]]],
+    [#ebnf-grouped-sequence()[#ebnf-nonterminal(special: true)[GenericParams]]],
+    [```typ #ebnf-optional-sequence()```],[#ebnf-optional-sequence[GenericParams]],
+    [```typ #ebnf-bracketed-comment[Comment]```], [#ebnf-bracketed-comment[Comment]],
   )
 
   === Syntax Rule
@@ -222,6 +235,9 @@
     #ebnf-terminal-symbol[fn]
     #ebnf-nonterminal[IDENTIFIER]
     #ebnf-nonterminal(special: true)[GenericParams] \
-    #ebnf-group-sequence(pad: 3)[#ebnf-nonterminal(special: true)[FunctionParameters]]
+    #ebnf-grouped-sequence(pads: 3)[#ebnf-nonterminal(special: true)[FunctionParameters]] \
+    #ebnf-nonterminal(pads: 3, special: true)[FunctionReturnType]
+    #ebnf-nonterminal(special: true)[WhereClause]\
+    #ebnf-grouped-sequence(pads: 3)[#ebnf-definitions[#ebnf-nonterminal[BlockExpression] #ebnf-terminal-symbol[;]]] \
   ]
 ]
