@@ -1,15 +1,15 @@
 #import "../ebnf.typ": *
 
-== `_validate-opt-key`
+== `_get-brackets(kind)`
 
 #[
   #context {
-    let keys = ("sym-prod", "sym-opt", "sym-some", "sym-any", "sym-rounded")
+    let keys = ("comment", "curly", "rounded", "square")
 
     let counter = 1
     for k in keys {
       [=== Test #counter: key = #repr(k)]
-      repr(_validate-opt-key(k))
+      repr(_get-brackets(k))
       counter += 1
     }
   }

@@ -9,7 +9,7 @@
 )
 
 #let _brackets = (
-  sym-bracket: (open: "(", close: ")"),
+  sym-rounded: (open: "(", close: ")"),
   sym-curly: (open: "{", close: "}"),
   sym-square: (open: "[", close: "]"),
   sym-comment: (open: "(*", close: "*)"),
@@ -64,13 +64,60 @@
 ))
 
 #let _error(message) = {
+  panic("Error: " + message)
+}
+
+#let _assert-some(value, message) = {
+  if message == none {
+    assert.ne(value, none, message: "Error: expected some, got none")
+  } else {
+    assert.ne(value, none, message: "Error: " + message)
+  }  
+}
+
+#let _update-config(key, value) = {
+  if key == none {
+    return _error("key must not be none, but got: " + repr(key))
+  }
+
+  if (value == none) {
+    return _error("value must not be none, but got: " + repr(value))
+  }
+
+  _configuration.update(it => {
+    it.insert(key, value)
+    it
+  })
+}
+
+#let _get-config(key: none) = {
+  if key == none {
+    return _error("key must not be none, but got: " + repr(key))
+  }
+
   let config = _configuration.get()
-  let color-error = config.at("color-error")
-  text(fill: color-error)[Error: #message]
+  let keys = config.keys()
+  if key not in keys {
+    let keys = config.keys().join(", ")
+    return _error("key must be one of " + keys + ", but got: " + repr(key))
+  }
+
+  let result = config.at(key)
+  result
 }
 
 #let _sym(text) = {
   "sym-" + text
+}
+
+#let _get-sym(symbol) = {
+  let sym = _sym(symbol)
+  _get-config(key: sym)
+}
+
+#let _get-brackets(kind) = {
+  _assert-some(kind, "kind must not be none, got: " + repr(kind))
+  _get-sym(kind)
 }
 
 #let _validate-opt-key(key, dict: none) = {
@@ -105,42 +152,6 @@
   }
 
   _validate-opt-key(key, dict: dict)
-}
-
-#let _update-config(key, value) = {
-  if key == none {
-    return _error("key must not be none, but got: " + repr(key))
-  }
-
-  if (value == none) {
-    return _error("value must not be none, but got: " + repr(value))
-  }
-
-  _configuration.update(it => {
-    it.insert(key, value)
-    it
-  })
-}
-
-#let _get-config(key: none) = {
-  if key == none {
-    return _error("key must not be none, but got: " + repr(key))
-  }
-
-  let config = _configuration.get()
-  let keys = config.keys()
-  if key not in keys {
-    let keys = config.keys().join(", ")
-    return _error("key must be one of " + keys + ", but got: " + repr(key))
-  }
-
-  let result = config.at(key)
-  result
-}
-
-#let _get-sym(symbol: none) = {
-  let sym = _sym(symbol)
-  _get-config(key: sym)
 }
 
 #let _trim-str(text) = {
@@ -188,7 +199,7 @@
     )
   }
 
-  let bracket = _get-sym(symbol: bracket-type)
+  let bracket = _get-sym(bracket-type)
   let open-bracket = bracket.open
   let close-bracket = bracket.close
   let result = open-bracket + body + close-bracket
@@ -230,6 +241,13 @@
   text(font: family, size: size)[#body]
 }
 
+#let regular(body) = {
+  let font = _get-config(key: "font-default")
+  let family = font.family
+  let size = font.size
+  text(font: family, size: size)[#body]
+}
+
 #let terminal(body) = {
   let delimiter = _get-config(key: "sym-delim")
   mono(delimiter + body + delimiter)
@@ -243,13 +261,6 @@
   let _code = _to-string(code)
 
   open-bracket + " " + raw(_code, lang: "rust") + " " + close-bracket
-}
-
-#let regular(body) = {
-  let font = _get-config(key: "font-default")
-  let family = font.family
-  let size = font.size
-  text(font: family, size: size)[#body]
 }
 
 #let qualified(body, illumination: none, qualifier: none) = {

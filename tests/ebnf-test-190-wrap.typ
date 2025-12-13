@@ -4,9 +4,9 @@
 
 #[
   #context {
-    let illum = (none, "dimmed", "highlighted")
+    let illum = ("dimmed", "highlighted")
     let qualifier = ("opt", "some", "any")
-    let bracket = ("bracket", "curly", "square", "comment")
+    let bracket = ("rounded", "curly", "square", "comment")
 
     let counter = 1
     for i in illum {

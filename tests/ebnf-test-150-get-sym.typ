@@ -2,4 +2,4 @@
 
 == Test: `_get-sym`
 
-#context _get-sym(symbol: "opt")
+#context _get-sym("opt")
