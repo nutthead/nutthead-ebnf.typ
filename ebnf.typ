@@ -72,16 +72,16 @@
     assert.ne(value, none, message: "Error: expected some, got none")
   } else {
     assert.ne(value, none, message: "Error: " + message)
-  }  
+  }
 }
 
 #let _update-config(key, value) = {
   if key == none {
-    return _error("key must not be none, but got: " + repr(key))
+    _error("key must not be none, but got: " + repr(key))
   }
 
   if (value == none) {
-    return _error("value must not be none, but got: " + repr(value))
+    _error("value must not be none, but got: " + repr(value))
   }
 
   _configuration.update(it => {
@@ -92,14 +92,14 @@
 
 #let _get-config(key: none) = {
   if key == none {
-    return _error("key must not be none, but got: " + repr(key))
+    _error("key must not be none, but got: " + repr(key))
   }
 
   let config = _configuration.get()
   let keys = config.keys()
   if key not in keys {
     let keys = config.keys().join(", ")
-    return _error("key must be one of " + keys + ", but got: " + repr(key))
+    _error("key must be one of " + keys + ", but got: " + repr(key))
   }
 
   let result = config.at(key)
@@ -132,7 +132,7 @@
   }
 
   if type(dict) != dictionary {
-    return _error(
+    _error(
       "expected dict to resolve to dictionary, but got: " + repr(type(key)),
     )
   }
@@ -140,7 +140,7 @@
   let keys = dict.keys()
 
   if key not in keys {
-    return _error(
+    _error(
       "key must be one of " + keys.join(", ") + ", but got: " + repr(key),
     )
   }
@@ -148,7 +148,7 @@
 
 #let _validate-key(key, dict: none) = {
   if key == none {
-    return _error("key must not be none, but got: " + repr(key))
+    _error("key must not be none, but got: " + repr(key))
   }
 
   _validate-opt-key(key, dict: dict)
@@ -194,7 +194,7 @@
   bracket-type: none,
 ) = {
   if bracket-type == none {
-    return _error(
+    _error(
       "bracket-type must not be none, but got: " + repr(bracket-type),
     )
   }
@@ -344,10 +344,10 @@
 
 #let ebnf(
   body,
-  definition-separator-symbol: none,
-  delimiter-symbol: none,
-  default-font: none,
-  monospaced-font: none,
+  definition-separator-symbol: _definition-separator-symbols.sym-vertical,
+  delimiter-symbol: _delimiter-symbols.sym-delim-3,
+  default-font: _fonts.font-default,
+  monospaced-font: _fonts.font-monospaced,
 ) = {
   _update-config("sym-separator", definition-separator-symbol)
   _update-config("sym-delim", delimiter-symbol)
