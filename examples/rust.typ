@@ -1,4 +1,4 @@
-#import "@preview/nutthead-ebnf:0.3.0": *
+#import "@preview/nutthead-ebnf:0.3.1": *
 
 #set page(paper: "a6", flipped: true)
 
@@ -6,10 +6,28 @@
   #ebnf[
     #[
       #syntax-rule(
-        meta-id: [Function],
-        example: [`fn main() { }`],
+        meta-id: [CHAR],
         definition-list: (
-          (indent: 1),
+          [
+            #special-sequence[a Unicode scalar value]
+          ],
+        )
+      )
+
+      #syntax-rule(
+        meta-id: [NUL],
+        definition-list: (
+          [
+            #terminal[U+0000]
+          ],
+        )
+      )
+
+      #syntax-rule(
+        meta-id: [Function],
+        comment: [some comment],
+        example: [```rust fn main() { }```],
+        definition-list: (
           [
             #single-definition(illumination: "dimmed")[FunctionQualifiers]
             #terminal[fn]

@@ -224,7 +224,7 @@
   let bracket = _get-config(_to-sym-key(bracket-type))
   let open-bracket = bracket.open
   let close-bracket = bracket.close
-  let result = open-bracket + body + close-bracket
+  let result = open-bracket + " " + body + " " + close-bracket
 
   if illumination != none {
     result = _illuminate(result, type: illumination)
@@ -289,9 +289,15 @@
   let open-bracket = brackets.open
   let close-bracket = brackets.close
 
-  let _code = _to-string(code)
+  open-bracket + " " + code + " " + close-bracket
+}
 
-  open-bracket + " " + raw(_code, lang: "rust") + " " + close-bracket
+#let cmnt(body) = {
+  let brackets = _get-config(_to-sym-key("comment"))
+  let open-bracket = brackets.open
+  let close-bracket = brackets.close
+
+  open-bracket + " " + body + " " + close-bracket
 }
 
 #let qualified(body, illumination: none, qualifier: none) = {
@@ -382,10 +388,23 @@
 #let syntax-rule(
   meta-id: none,
   example: none,
+  comment: none,
   definition-list: none,
 ) = context {
-  code-example(example)
-  linebreak()
+  if comment == none {
+    none
+  } else {
+    cmnt(comment)
+    linebreak()
+  }
+
+  if example == none { 
+    none 
+  } else { 
+    code-example(example) 
+    linebreak()
+  }
+  
   meta-identifier(meta-id)
 
   let indent = 1
