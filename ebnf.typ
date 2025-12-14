@@ -13,6 +13,7 @@
   sym-curly: (open: "{", close: "}"),
   sym-square: (open: "[", close: "]"),
   sym-comment: (open: "(*", close: "*)"),
+  sym-special: (open: "?", close: "?"),
 )
 
 #let _definition-separator-symbols = (
@@ -166,6 +167,43 @@
   text
 }
 
+#let _is-space-like(c) = {
+  // Check for space content
+  if c == [ ] {
+    return true
+  }
+  // Check for parbreak (from newlines in content blocks)
+  let r = repr(c)
+  if r.starts-with("parbreak") {
+    return true
+  }
+  false
+}
+
+#let _trim-content(content) = {
+  if type(content) == str {
+    return _trim-str(content)
+  }
+
+  if not content.has("children") {
+    return content
+  }
+
+  let children = content.children
+
+  // Remove leading whitespace-like content
+  while children.len() > 0 and _is-space-like(children.first()) {
+    children = children.slice(1)
+  }
+
+  // Remove trailing whitespace-like content
+  while children.len() > 0 and _is-space-like(children.last()) {
+    children = children.slice(0, children.len() - 1)
+  }
+
+  children.join()
+}
+
 #let _get-def-separator-sym() = {
   _get-config(key: "sym-separator")
 }
@@ -303,6 +341,36 @@
   _wrap(_body, illumination: illumination, qualifier: qualifier, bracket-type: "rounded")
 }
 
+#let optional-sequence(body, illumination: none, qualifier: none) = {
+  let _body = if body.has("children") {
+    body.children.filter(it => it != [ ]).join(" | ")
+  } else {
+    body
+  }
+
+  _wrap(_body, illumination: illumination, qualifier: qualifier, bracket-type: "square")
+}
+
+#let repeated-sequence(body, illumination: none, qualifier: none) = {
+  let _body = if body.has("children") {
+    body.children.filter(it => it != [ ]).join(" | ")
+  } else {
+    body
+  }
+
+  _wrap(_body, illumination: illumination, qualifier: qualifier, bracket-type: "curly")
+}
+
+#let special-sequence(body, illumination: none, qualifier: none) = {
+  let _body = if body.has("children") {
+    body.children.filter(it => it != [ ]).join(" | ")
+  } else {
+    body
+  }
+
+  _wrap(_body, illumination: illumination, qualifier: qualifier, bracket-type: "special")
+}
+
 #let single-definition(body, illumination: none, qualifier: none) = {
   let illum = if illumination == none { none } else { "illum-" + illumination }
 
@@ -330,28 +398,16 @@
   meta-identifier(meta-id)
 
   let indent = 1
-  let first-item = false
-  let separator = _get-def-separator-sym()
-  let separator_len = measure(separator + " ")
   for (i, item) in definition-list.enumerate() {
     if type(item) == dictionary {
       indent = 1 * item.indent
     } else {
-      first-item = if first-item == false { true } else { false }
       linebreak()
 
       h(indent * 1em)
 
-      if i > 1 and type(item) == content {
-        separator
-      }
-
       if type(item) == content {
-        if first-item {
-          h(separator_len.width)
-        }
-
-        item
+        _trim-content(item)
       }
     }
   }

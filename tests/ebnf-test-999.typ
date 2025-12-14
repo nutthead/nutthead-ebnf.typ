@@ -14,6 +14,7 @@
             #single-definition[IDENTIFIER]
             #single-definition(illumination: "dimmed", qualifier: "sym-opt")[GenericParams]
           ],
+          (indent: 2),
           [
             #terminal[(]
             #single-definition(qualifier: "sym-opt")[FunctionParameters]
