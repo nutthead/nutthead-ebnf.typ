@@ -11,7 +11,7 @@ Faithful to the [ISO 14977 (PDF)](https://www.cl.cam.ac.uk/~mgk25/iso-14977.pdf)
 ## Usage
 
 ```typ
-#import "@preview/nutthead-ebnf:0.3.0": *
+#import "@preview/nutthead-ebnf:0.3.1": *
 
 #context [
   #ebnf[
