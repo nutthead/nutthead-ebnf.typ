@@ -1,192 +1,195 @@
 # nutthead-ebnf
 
-A Typst package for rendering Extended Backus-Naur Form (EBNF) grammars with customizable fonts and color schemes. Fully compliant with ISO 14977.
+A Typst package for rendering Extended Backus-Naur Form (EBNF) grammars.
 
-## Java Grammar Example
+Faithful to the [ISO 14977 (PDF)](https://www.cl.cam.ac.uk/~mgk25/iso-14977.pdf) standard, albeit with a few judicious departures where deemed necessary.
 
-![Java grammar example](examples/java.svg)
+## Rust Function Example
 
-## ISO 14977 Grammar Example
-
-![ISO 14977 grammar example](examples/iso-14977.svg)
+![Rust function example](examples/rust.svg)
 
 ## Usage
 
-```typst
-#import "@preview/nutthead-ebnf:0.1.0": *
+```typ
+#import "@preview/nutthead-ebnf:0.3.0": *
 
-#syntax(
-  mono-font: "JetBrains Mono",
-  syntax-rule(
-    meta-identifier[Expression],
-    {
-      definitions-list[#meta-identifier[Term] #repeated-sequence[#terminal-string[\+] #meta-identifier[Term]]][arithmetic expression]
-    },
-  ),
-  syntax-rule(
-    meta-identifier[Term],
-    {
-      definitions-list[#meta-identifier[Factor] #repeated-sequence[#terminal-string[\*] #meta-identifier[Factor]]][multiplication]
-    },
-  ),
-)
+#context [
+  #ebnf[
+    #[
+      #syntax-rule(
+        meta-id: [Function],
+        example: [`fn main() { }`],
+        definition-list: (
+          (indent: 1),
+          [
+            #single-definition(illumination: "dimmed")[FunctionQualifiers]
+            #terminal[fn]
+            #single-definition[IDENTIFIER]
+            #single-definition(illumination: "dimmed", qualifier: "opt")[GenericParams]
+          ],
+          (indent: 2),
+          [
+            #terminal[(]
+            #single-definition(qualifier: "opt")[FunctionParameters]
+            #terminal[)]
+          ],
+          [
+            #single-definition(illumination: "dimmed", qualifier: "opt")[FunctionReturnType]
+            #single-definition(illumination: "dimmed", qualifier: "opt")[WhereClause]
+          ],
+          [
+            #grouped-sequence[
+              #single-definition[BlockExpression]
+              #terminal(illumination: "dimmed")[;]
+            ]
+          ],
+        ),
+      )
+    ]
+  ]
+]
 ```
 
 ## API Reference
 
-### `syntax()`
+### `ebnf()`
 
-Renders an EBNF grammar as a formatted 4-column grid (LHS, delimiter, RHS, comments).
+Container function that configures the EBNF rendering context.
 
-| Parameter            | Type            | Default           | Description                              |
-| -------------------- | --------------- | ----------------- | ---------------------------------------- |
-| `mono-font`          | `str` or `none` | `none`            | Font for grammar symbols                 |
-| `colors`             | `dict`          | `colors-colorful` | Color scheme                             |
-| `production-spacing` | `length`        | `0.5em`           | Extra vertical space between productions |
-| `column-gap`         | `length`        | `0.75em`          | Horizontal spacing between columns       |
-| `row-gap`            | `length`        | `0.5em`           | Vertical spacing between rows            |
-| `..body`             | `syntax-rule()` | —                 | Production rules                         |
+| Parameter                     | Type   | Default              | Description                      |
+| ----------------------------- | ------ | -------------------- | -------------------------------- |
+| `body`                        | `content` | —                 | Content to render                |
+| `definition-separator-symbol` | `str`  | `"\|"`               | Symbol for separating alternatives |
+| `delimiter-symbol`            | `str`  | `` "`" ``            | Delimiter for terminal symbols   |
+| `default-font`                | `dict` | Libertinus Serif 1em | Default text font                |
+| `monospaced-font`             | `dict` | DejaVu Sans Mono 0.887em | Monospace font for terminals |
+
+```typ
+#context [
+  #ebnf[
+    #syntax-rule(...)
+  ]
+]
+```
 
 ### `syntax-rule()`
 
-Defines a production rule.
+Defines a production rule with a meta-identifier, example, and definition list.
 
-```typst
-syntax-rule(
-  meta-identifier[NonTerminal],  // Left-hand side
-  delim: "::=",                  // Optional custom delimiter (default: auto)
-  {
-    definitions-list[...][comment]  // One or more alternatives with optional comments
-  },
-)
-```
+| Parameter         | Type      | Default | Description                          |
+| ----------------- | --------- | ------- | ------------------------------------ |
+| `meta-id`         | `content` | `none`  | Left-hand side identifier            |
+| `example`         | `content` | `none`  | Code example shown as comment        |
+| `definition-list` | `array`   | `none`  | Array of definitions and indent controls |
 
-### `definitions-list()`
-
-Defines an alternative in a production's right-hand side. The second argument is an optional comment rendered as `(* ... *)` in a dedicated column.
-
-```typst
-definitions-list[#terminal-string[terminal] #meta-identifier[NonTerminal]][optional comment]
-definitions-list[#terminal-string[another]][]  // Empty comment renders nothing
-```
-
-### Symbol Functions
-
-| Function                 | Description                     | Example                                                     |
-| ------------------------ | ------------------------------- | ----------------------------------------------------------- |
-| `terminal-string[...]`   | Terminal symbol                 | `terminal-string[if]`                                       |
-| `meta-identifier[...]`   | Non-terminal reference (italic) | `meta-identifier[Expr]`                                     |
-| `optional-sequence[...]` | Optional: `[content]`           | `optional-sequence[#terminal-string[else]]`                 |
-| `repeated-sequence[...]` | Repetition: `{content}`         | `repeated-sequence[#meta-identifier[Stmt]]`                 |
-| `grouped-sequence[...]`  | Grouping: `(content)`           | `grouped-sequence[#terminal-string[a] #terminal-string[b]]` |
-| `exception(a, b)`        | Exception: `a − b`              | `exception(meta-identifier[letter], terminal-string[x])`    |
-| `single-definition(...)` | Concatenation: `a , b , c`      | `single-definition(terminal-string[a], terminal-string[b])` |
-| `syntactic-factor(n, x)` | Repetition count: `n ∗ x`       | `syntactic-factor(3, terminal-string[a])`                   |
-| `special-sequence[...]`  | Special sequence: `? ... ?`     | `special-sequence[any character]`                           |
-| `comment[...]`           | Inline comment: `(* ... *)`     | `comment[see 4.2]`                                          |
-| `empty-sequence`         | Empty/epsilon: `ε`              | `definitions-list[#empty-sequence][empty production]`       |
-
-## Color Schemes
-
-Two built-in color schemes are provided:
-
-### `colors-colorful` (default)
-
-Distinct colors for each element type:
-
-- **LHS**: Blue (`#1a5fb4`)
-- **Non-terminal**: Purple (`#613583`)
-- **Terminal**: Green (`#26a269`)
-- **Operator**: Red (`#a51d2d`)
-- **Delimiter**: Gray (`#5e5c64`)
-- **Comment**: Gray (`#5e5c64`)
-
-### `colors-plain`
-
-No colors applied (all elements use default text color).
-
-### Custom Colors
-
-```typst
-#let my-colors = (
-  lhs: rgb("#000000"),
-  nonterminal: rgb("#0000ff"),
-  terminal: rgb("#008000"),
-  operator: rgb("#ff0000"),
-  delim: rgb("#808080"),
-  comment: rgb("#808080"),
-)
-
-#syntax(
-  colors: my-colors,
-  syntax-rule(meta-identifier[S], { definitions-list[#terminal-string[a] #meta-identifier[B]][example] }),
-)
-```
-
-## Comments
-
-Comments are specified as the second argument to `definitions-list()` and rendered as ISO 14977 `(* ... *)` notation in a dedicated fourth column:
-
-```typst
-syntax-rule(meta-identifier[Modifier], {
-  definitions-list[#terminal-string[public]][access modifier]   // → (* access modifier *)
-  definitions-list[#terminal-string[private]][]                 // → (no comment)
-  definitions-list[#terminal-string[static]][other modifiers]   // → (* other modifiers *)
-})
-```
-
-For inline comments within the RHS, use `comment[...]`.
-
-## Examples
-
-### Rust Function Grammar
-
-```typst
-#import "@preview/nutthead-ebnf:0.1.0": *
-
-#syntax(
-  mono-font: "JetBrains Mono",
-  syntax-rule(
-    meta-identifier[Function],
-    {
-      definitions-list[#optional-sequence[#terminal-string[pub]] #terminal-string[fn] #meta-identifier[Ident] #terminal-string[\(] #optional-sequence[#meta-identifier[Params]] #terminal-string[\)] #meta-identifier[Block]][function definition]
-    },
-  ),
-  syntax-rule(
-    meta-identifier[Type],
-    {
-      definitions-list[#meta-identifier[Ident] #optional-sequence[#meta-identifier[Generics]]][named type]
-      definitions-list[#terminal-string[&] #optional-sequence[#meta-identifier[Lifetime]] #optional-sequence[#terminal-string[mut]] #meta-identifier[Type]][reference type]
-      definitions-list[#terminal-string[\[] #meta-identifier[Type] #terminal-string[\]]][slice type]
-    },
+```typ
+#syntax-rule(
+  meta-id: [Function],
+  example: [`fn main() { }`],
+  definition-list: (
+    (indent: 1),
+    [#terminal[fn] #single-definition[IDENTIFIER]],
+    (indent: 2),
+    [#terminal[(] #single-definition(qualifier: "opt")[Params] #terminal[)]],
   ),
 )
 ```
 
-### Java Class Grammar
+### `single-definition()`
 
-```typst
-#import "@preview/nutthead-ebnf:0.1.0": *
+Renders a non-terminal reference in italic.
 
-#syntax(
-  mono-font: "Fira Mono",
-  syntax-rule(
-    meta-identifier[ClassDecl],
-    {
-      definitions-list[#optional-sequence[#meta-identifier[Modifier]] #terminal-string[class] #meta-identifier[Ident] #optional-sequence[#terminal-string[extends] #meta-identifier[Type]] #meta-identifier[ClassBody]][class declaration]
-    },
-  ),
-  syntax-rule(
-    meta-identifier[Modifier],
-    {
-      definitions-list[#terminal-string[public]][access modifier]
-      definitions-list[#terminal-string[private]][]
-      definitions-list[#terminal-string[protected]][]
-      definitions-list[#terminal-string[static]][other modifiers]
-      definitions-list[#terminal-string[final]][]
-    },
-  ),
-)
+| Parameter      | Type   | Default | Description                                |
+| -------------- | ------ | ------- | ------------------------------------------ |
+| `body`         | `content` | —    | The non-terminal name                      |
+| `illumination` | `str`  | `none`  | `"dimmed"` or `"highlighted"`              |
+| `qualifier`    | `str`  | `none`  | `"opt"` (?), `"some"` (+), or `"any"` (\*) |
+
+```typ
+#single-definition[IDENTIFIER]
+#single-definition(illumination: "dimmed")[FunctionQualifiers]
+#single-definition(qualifier: "opt")[GenericParams]
+```
+
+### `terminal()`
+
+Renders a terminal symbol in monospace font with delimiters.
+
+| Parameter      | Type      | Default | Description                   |
+| -------------- | --------- | ------- | ----------------------------- |
+| `body`         | `content` | —       | The terminal text             |
+| `illumination` | `str`     | `none`  | `"dimmed"` or `"highlighted"` |
+
+```typ
+#terminal[fn]
+#terminal(illumination: "dimmed")[;]
+```
+
+### `meta-identifier()`
+
+Renders a meta-identifier (left-hand side of a production) in bold with a production arrow.
+
+```typ
+#meta-identifier[Function]
+```
+
+### `grouped-sequence()`
+
+Renders content in parentheses `( ... )` for grouping alternatives.
+
+| Parameter      | Type      | Default | Description                                |
+| -------------- | --------- | ------- | ------------------------------------------ |
+| `body`         | `content` | —       | Content to group                           |
+| `illumination` | `str`     | `none`  | `"dimmed"` or `"highlighted"`              |
+| `qualifier`    | `str`     | `none`  | `"opt"` (?), `"some"` (+), or `"any"` (\*) |
+
+```typ
+#grouped-sequence[
+  #single-definition[BlockExpression]
+  #terminal(illumination: "dimmed")[;]
+]
+```
+
+### `optional-sequence()`
+
+Renders content in square brackets `[ ... ]` for optional elements.
+
+| Parameter      | Type      | Default | Description                                |
+| -------------- | --------- | ------- | ------------------------------------------ |
+| `body`         | `content` | —       | Optional content                           |
+| `illumination` | `str`     | `none`  | `"dimmed"` or `"highlighted"`              |
+| `qualifier`    | `str`     | `none`  | `"opt"` (?), `"some"` (+), or `"any"` (\*) |
+
+```typ
+#optional-sequence[#terminal[else] #single-definition[Block]]
+```
+
+### `repeated-sequence()`
+
+Renders content in curly braces `{ ... }` for repetition (zero or more).
+
+| Parameter      | Type      | Default | Description                                |
+| -------------- | --------- | ------- | ------------------------------------------ |
+| `body`         | `content` | —       | Content to repeat                          |
+| `illumination` | `str`     | `none`  | `"dimmed"` or `"highlighted"`              |
+| `qualifier`    | `str`     | `none`  | `"opt"` (?), `"some"` (+), or `"any"` (\*) |
+
+```typ
+#repeated-sequence[#single-definition[Statement]]
+```
+
+### `special-sequence()`
+
+Renders content in question marks `? ... ?` for special sequences.
+
+| Parameter      | Type      | Default | Description                                |
+| -------------- | --------- | ------- | ------------------------------------------ |
+| `body`         | `content` | —       | Special sequence description               |
+| `illumination` | `str`     | `none`  | `"dimmed"` or `"highlighted"`              |
+| `qualifier`    | `str`     | `none`  | `"opt"` (?), `"some"` (+), or `"any"` (\*) |
+
+```typ
+#special-sequence[any Unicode character]
 ```
 
 ## License

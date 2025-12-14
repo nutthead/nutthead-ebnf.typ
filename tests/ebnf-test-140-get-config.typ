@@ -2,4 +2,4 @@
 
 == Test: `_get-config`
 
-#context _get-config(key: "sym-prod")
+#context _get-config("sym-prod")

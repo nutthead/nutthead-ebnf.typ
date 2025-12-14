@@ -91,9 +91,9 @@
   })
 }
 
-#let _get-config(key: none) = {
+#let _get-config(key, default: none) = {
   if key == none {
-    _error("key must not be none, but got: " + repr(key))
+    return default
   }
 
   let config = _configuration.get()
@@ -107,18 +107,13 @@
   result
 }
 
-#let _sym(text) = {
-  "sym-" + text
-}
-
-#let _get-sym(symbol) = {
-  let sym = _sym(symbol)
-  _get-config(key: sym)
+#let _to-sym-key(text) = {
+  if text == none { none } else { "sym-" + text }  
 }
 
 #let _get-brackets(kind) = {
   _assert-some(kind, "kind must not be none, got: " + repr(kind))
-  _get-sym(kind)
+  _get-config(_to-sym-key(kind))
 }
 
 #let _validate-opt-key(key, dict: none) = {
@@ -167,17 +162,8 @@
   text
 }
 
-#let _is-space-like(c) = {
-  // Check for space content
-  if c == [ ] {
-    return true
-  }
-  // Check for parbreak (from newlines in content blocks)
-  let r = repr(c)
-  if r.starts-with("parbreak") {
-    return true
-  }
-  false
+#let _is-space(c) = {
+  c == [ ]
 }
 
 #let _trim-content(content) = {
@@ -191,13 +177,11 @@
 
   let children = content.children
 
-  // Remove leading whitespace-like content
-  while children.len() > 0 and _is-space-like(children.first()) {
+  while children.len() > 0 and _is-space(children.first()) {
     children = children.slice(1)
   }
 
-  // Remove trailing whitespace-like content
-  while children.len() > 0 and _is-space-like(children.last()) {
+  while children.len() > 0 and _is-space(children.last()) {
     children = children.slice(0, children.len() - 1)
   }
 
@@ -205,7 +189,7 @@
 }
 
 #let _get-def-separator-sym() = {
-  _get-config(key: "sym-separator")
+  _get-config("sym-separator")
 }
 
 #let _illuminate(body, type: none) = {
@@ -219,7 +203,7 @@
       _error("type must be one of " + keys.join(", ") + ", got: " + repr(type))
     }
 
-    let color = _get-config(key: key)
+    let color = _get-config(key)
 
     text(body, fill: color)
   }
@@ -237,7 +221,7 @@
     )
   }
 
-  let bracket = _get-sym(bracket-type)
+  let bracket = _get-config(_to-sym-key(bracket-type))
   let open-bracket = bracket.open
   let close-bracket = bracket.close
   let result = open-bracket + body + close-bracket
@@ -246,16 +230,12 @@
     result = _illuminate(result, type: illumination)
   }
 
-  let qualifier-key = if qualifier == none {
-    none
-  } else {
-    _sym(qualifier)
-  }
+  let qualifier-key = _to-sym-key(qualifier)
 
   let qualifier-sym = if qualifier-key == none {
     none
   } else {
-    _get-config(key: qualifier-key)
+    _get-config(qualifier-key)
   }
 
   if qualifier-sym != none {
@@ -281,27 +261,31 @@
   }
 }
 
+#let _to-illumination-key(illum) = {
+  if illum == none { none } else { "illum-" + illum }
+}
+
 #let mono(body) = {
-  let font = _get-config(key: "font-monospaced")
+  let font = _get-config("font-monospaced")
   let family = font.family
   let size = font.size
   text(font: family, size: size)[#body]
 }
 
 #let regular(body) = {
-  let font = _get-config(key: "font-default")
+  let font = _get-config("font-default")
   let family = font.family
   let size = font.size
   text(font: family, size: size)[#body]
 }
 
 #let terminal(body, illumination: none) = {
-  let delimiter = _get-config(key: "sym-delim")
+  let delimiter = _get-config("sym-delim")
   mono(delimiter + body + delimiter)
 }
 
 #let code-example(code) = {
-  let brackets = _get-config(key: "sym-comment")
+  let brackets = _get-config(_to-sym-key("comment"))
   let open-bracket = brackets.open
   let close-bracket = brackets.close
 
@@ -316,7 +300,7 @@
       "Error: qualifier must be one of " + _qualifiers.keys().join(", ") + ", got: " + repr(qualifier),
     )
   } else {
-    body + _qualifiers.at(qualifier)
+    body + super(_qualifiers.at(qualifier))
   }
 
   if illumination != none {
@@ -327,7 +311,7 @@
 }
 
 #let meta-identifier(body) = {
-  let prod = _get-config(key: "sym-prod")
+  let prod = _get-config(_to-sym-key("prod"))
   strong(body) + " " + prod
 }
 
@@ -372,14 +356,21 @@
 }
 
 #let single-definition(body, illumination: none, qualifier: none) = {
-  let illum = if illumination == none { none } else { "illum-" + illumination }
+  let illum = _to-illumination-key(illumination)
+  let qual = _to-sym-key(qualifier)
 
-  _validate-opt-key(qualifier)
+  _validate-opt-key(qual)
   _validate-opt-key(illum)
 
   let result = (
-    emph(body) + if qualifier == none { none } else { _qualifiers.at(qualifier) }
+    emph(body) + if qual == none { none } else { _qualifiers.at(qual) }
   )
+
+  let result = if qual == none {
+    emph(body)
+  } else {
+    qualified(body, illumination: illumination, qualifier: qual)
+  }
 
   if illumination != none {
     _illuminate(result, type: illumination)
