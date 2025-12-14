@@ -204,14 +204,23 @@
   let close-bracket = bracket.close
   let result = open-bracket + body + close-bracket
 
-
   if illumination != none {
     result = _illuminate(result, type: illumination)
   }
 
-  let qualifier-key = _sym(qualifier)
-  let qualifier-sym = _get-config(key: qualifier-key)
-  if qualifier != none {
+  let qualifier-key = if qualifier == none {
+    none
+  } else {
+    _sym(qualifier)
+  }
+
+  let qualifier-sym = if qualifier-key == none {
+    none
+  } else {
+    _get-config(key: qualifier-key)
+  }
+
+  if qualifier-sym != none {
     result = result + qualifier-sym
   }
 
@@ -248,7 +257,7 @@
   text(font: family, size: size)[#body]
 }
 
-#let terminal(body) = {
+#let terminal(body, illumination: none) = {
   let delimiter = _get-config(key: "sym-delim")
   mono(delimiter + body + delimiter)
 }
@@ -266,10 +275,7 @@
 #let qualified(body, illumination: none, qualifier: none) = {
   let result = if qualifier == none or qualifier not in _qualifiers {
     panic(
-      "Error: qualifier must be one of "
-        + _qualifiers.keys().join(", ")
-        + ", got: "
-        + repr(qualifier),
+      "Error: qualifier must be one of " + _qualifiers.keys().join(", ") + ", got: " + repr(qualifier),
     )
   } else {
     body + _qualifiers.at(qualifier)
@@ -287,6 +293,16 @@
   strong(body) + " " + prod
 }
 
+#let grouped-sequence(body, illumination: none, qualifier: none) = {
+  let _body = if body.has("children") {
+    body.children.filter(it => it != [ ]).join(" | ")
+  } else {
+    body
+  }
+
+  _wrap(_body, illumination: illumination, qualifier: qualifier, bracket-type: "rounded")
+}
+
 #let single-definition(body, illumination: none, qualifier: none) = {
   let illum = if illumination == none { none } else { "illum-" + illumination }
 
@@ -294,8 +310,7 @@
   _validate-opt-key(illum)
 
   let result = (
-    emph(body)
-      + if qualifier == none { none } else { _qualifiers.at(qualifier) }
+    emph(body) + if qualifier == none { none } else { _qualifiers.at(qualifier) }
   )
 
   if illumination != none {
