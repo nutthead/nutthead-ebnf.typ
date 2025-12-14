@@ -375,7 +375,7 @@
   let result = if qual == none {
     emph(body)
   } else {
-    qualified(body, illumination: illumination, qualifier: qual)
+    qualified(emph(body), illumination: illumination, qualifier: qual)
   }
 
   if illumination != none {

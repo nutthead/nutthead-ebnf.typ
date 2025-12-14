@@ -17,10 +17,28 @@ Faithful to the [ISO 14977 (PDF)](https://www.cl.cam.ac.uk/~mgk25/iso-14977.pdf)
   #ebnf[
     #[
       #syntax-rule(
-        meta-id: [Function],
-        example: [`fn main() { }`],
+        meta-id: [CHAR],
         definition-list: (
-          (indent: 1),
+          [
+            #special-sequence[a Unicode scalar value]
+          ],
+        )
+      )
+
+      #syntax-rule(
+        meta-id: [NUL],
+        definition-list: (
+          [
+            #terminal[U+0000]
+          ],
+        )
+      )
+
+      #syntax-rule(
+        meta-id: [Function],
+        comment: [some comment],
+        example: [```rust fn main() { }```],
+        definition-list: (
           [
             #single-definition(illumination: "dimmed")[FunctionQualifiers]
             #terminal[fn]
