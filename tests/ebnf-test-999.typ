@@ -1,6 +1,4 @@
-#import "@preview/nutthead-ebnf:0.3.0": *
-
-#set page(paper: "a6", flipped: true)
+#import "../ebnf.typ": *
 
 #context [
   #ebnf[

@@ -1,255 +1,420 @@
-/// Plain color scheme
-#let colors-plain = (
-  lhs: none,
-  nonterminal: none,
-  terminal: none,
-  operator: none,
-  delim: none,
-  comment: none,
+#let _namespace = "nutthead.ebnf."
+
+#let _sym-prod = symbol(sym.arrow.r)
+
+#let _qualifiers = (
+  sym-opt: "?",
+  sym-some: "+",
+  sym-any: "*",
 )
 
-/// Colorful color scheme (default)
-#let colors-colorful = (
-  lhs: rgb("#1a5fb4"),
-  nonterminal: rgb("#613583"),
-  terminal: rgb("#26a269"),
-  operator: rgb("#a51d2d"),
-  delim: rgb("#5e5c64"),
-  comment: rgb("#5e5c64"),
+#let _brackets = (
+  sym-rounded: (open: "(", close: ")"),
+  sym-curly: (open: "{", close: "}"),
+  sym-square: (open: "[", close: "]"),
+  sym-comment: (open: "(*", close: "*)"),
+  sym-special: (open: "?", close: "?"),
 )
 
-// Layout constants
-#let _error-text-size = 0.9em
-#let _production-spacing = 0.5em
-#let _column-gap = 0.75em
-#let _row-gap = 0.5em
-
-#let _color-keys = (
-  "lhs",
-  "nonterminal",
-  "terminal",
-  "operator",
-  "delim",
-  "comment",
+#let _definition-separator-symbols = (
+  sym-vertical: "|",
+  sym-solidus: "/",
+  sym-exclamation: "!",
 )
 
-#let _ebnf-state = state("ebnf", (
-  mono-font: none,
-  colors: colors-colorful,
+#let _delimiter-symbols = (
+  sym-delim-1: "\"",
+  sym-delim-2: "'",
+  sym-delim-3: "`",
+)
+
+#let _colors = (
+  color-dimmed: rgb("#828282"),
+  color-highlighted: rgb("#4F46E5"),
+  color-error: rgb("#FF0000"),
+)
+
+#let _illuminations = (
+  illum-dimmed: _colors.color-dimmed,
+  illum-highlighted: _colors.color-highlighted,
+)
+
+///
+/// root(4, Φ)      ≈ 1.127
+///
+/// 1em     / 1.127 ≈ 0.887em
+///
+/// 0.887em / 1.127 ≈ 0.787
+///
+#let _fonts = (
+  font-default: (family: "Libertinus Serif", size: 1em),
+  font-monospaced: (family: "Dejavu Sans Mono", size: 0.887em),
+)
+
+#let _configuration = state("nutthead.ebnf", (
+  sym-prod: _sym-prod,
+  .._qualifiers,
+  .._brackets,
+  .._definition-separator-symbols,
+  sym-separator: _definition-separator-symbols.at("sym-vertical"),
+  sym-delim: _delimiter-symbols.sym-delim-3,
+  .._delimiter-symbols,
+  .._colors,
+  .._illuminations,
+  .._fonts,
 ))
 
-#let _error(msg) = text(
-  fill: red,
-  weight: "bold",
-  size: _error-text-size,
-)[⚠ EBNF Error: #msg]
-
-#let _styled(color, content) = if color != none {
-  text(fill: color, content)
-} else { content }
-
-#let _wrap-op(left, right, content, suffix: none) = context {
-  let state = _ebnf-state.get()
-  let c = state.colors.at("operator", default: none)
-  set text(font: state.mono-font) if state.mono-font != none
-  if suffix != none {
-    [#_styled(c, left)#content#_styled(c, right)#_styled(c, suffix)]
-  } else { [#_styled(c, left)#content#_styled(c, right)] }
+#let _error(message) = {
+  panic("Error: " + message)
 }
 
-#let _colorize(role, content) = context {
-  let state = _ebnf-state.get()
-  let styled-content = if state.mono-font != none {
-    text(font: state.mono-font, content)
-  } else { content }
-  _styled(state.colors.at(role, default: none), styled-content)
+#let _assert-some(value, message) = {
+  if message == none {
+    assert.ne(value, none, message: "Error: expected some, got none")
+  } else {
+    assert.ne(value, none, message: "Error: " + message)
+  }
 }
 
-#let _validate-font(mono-font) = {
-  if mono-font != none and type(mono-font) != str {
-    return (false, "mono-font must be string or none")
+#let _update-config(key, value) = {
+  if key == none {
+    _error("key must not be none, but got: " + repr(key))
   }
-  (true, none)
+
+  if (value == none) {
+    _error("value must not be none, but got: " + repr(value))
+  }
+
+  _configuration.update(it => {
+    it.insert(key, value)
+    it
+  })
 }
 
-#let _validate-colors(colors) = {
-  if type(colors) != dictionary {
-    return (false, "colors must be a dictionary")
+#let _get-config(key, default: none) = {
+  if key == none {
+    return default
   }
-  let missing = _color-keys.filter(k => k not in colors)
-  if missing.len() > 0 {
-    return (false, "colors missing: " + missing.join(", "))
+
+  let config = _configuration.get()
+  let keys = config.keys()
+  if key not in keys {
+    let keys = config.keys().join(", ")
+    _error("key must be one of " + keys + ", but got: " + repr(key))
   }
-  (true, none)
+
+  let result = config.at(key)
+  result
 }
 
-#let _validate-prod(prod, n) = {
-  if type(prod) != array or prod.len() != 3 {
-    return (false, "production #" + str(n) + " invalid")
+#let _to-sym-key(text) = {
+  if text == none { none } else { "sym-" + text }  
+}
+
+#let _get-brackets(kind) = {
+  _assert-some(kind, "kind must not be none, got: " + repr(kind))
+  _get-config(_to-sym-key(kind))
+}
+
+#let _validate-opt-key(key, dict: none) = {
+  if key == none {
+    return
   }
-  let alts = prod.at(2)
-  if type(alts) != array or alts.len() == 0 {
-    return (false, "production #" + str(n) + " has no alternatives")
+
+  dict = if dict == none {
+    _configuration.at(here())
+  } else {
+    dict
   }
-  for a in alts {
-    if type(a) != array or a.len() != 2 {
-      return (false, "production #" + str(n) + " has invalid alt()")
+
+  if type(dict) != dictionary {
+    _error(
+      "expected dict to resolve to dictionary, but got: " + repr(type(key)),
+    )
+  }
+
+  let keys = dict.keys()
+
+  if key not in keys {
+    _error(
+      "key must be one of " + keys.join(", ") + ", but got: " + repr(key),
+    )
+  }
+}
+
+#let _validate-key(key, dict: none) = {
+  if key == none {
+    _error("key must not be none, but got: " + repr(key))
+  }
+
+  _validate-opt-key(key, dict: dict)
+}
+
+#let _trim-str(text) = {
+  while text.len() > 0 and text.first() == " " {
+    text = text.slice(1)
+  }
+
+  while text.len() > 0 and text.last() == " " {
+    text = text.slice(0, text.len() - 1)
+  }
+
+  text
+}
+
+#let _is-space(c) = {
+  c == [ ]
+}
+
+#let _trim-content(content) = {
+  if type(content) == str {
+    return _trim-str(content)
+  }
+
+  if not content.has("children") {
+    return content
+  }
+
+  let children = content.children
+
+  while children.len() > 0 and _is-space(children.first()) {
+    children = children.slice(1)
+  }
+
+  while children.len() > 0 and _is-space(children.last()) {
+    children = children.slice(0, children.len() - 1)
+  }
+
+  children.join()
+}
+
+#let _get-def-separator-sym() = {
+  _get-config("sym-separator")
+}
+
+#let _illuminate(body, type: none) = {
+  if type == none {
+    text(body)
+  } else {
+    let key = "illum-" + type
+    let keys = _illuminations.keys()
+
+    if key not in keys {
+      _error("type must be one of " + keys.join(", ") + ", got: " + repr(type))
     }
+
+    let color = _get-config(key)
+
+    text(body, fill: color)
   }
-  (true, none)
 }
 
-#let _validate-prods(prods) = {
-  if prods.len() == 0 {
-    return (false, "no productions provided")
-  }
-  for (i, p) in prods.enumerate() {
-    let (ok, err) = _validate-prod(p, i + 1)
-    if not ok { return (false, err) }
-  }
-  (true, none)
-}
-
-#let _prod-to-rows(idx, prod, production-spacing) = {
-  let (lhs, delim, alts) = prod
-  let delim = if delim == auto { "::=" } else { delim }
-
-  let rows = ()
-
-  // Add spacer row before production (except first)
-  if idx > 0 {
-    rows.push((grid.cell(colspan: 4, v(production-spacing)),))
-  }
-
-  // Add alternative rows
-  for (i, (rhs, comment)) in alts.enumerate() {
-    let has-comment = comment != none and comment != []
-    let comment-col = if has-comment {
-      _colorize("comment", [(\* #comment \*)])
-    } else { [] }
-
-    let row = if i == 0 {
-      (_colorize("lhs", lhs), _colorize("delim", delim), rhs, comment-col)
-    } else {
-      ([], _colorize("delim", "|"), rhs, comment-col)
-    }
-    rows.push(row)
-  }
-
-  rows
-}
-
-/// Optional sequence: `[ definitions-list ]`
-#let optional-sequence(content) = _wrap-op("[", "]", content)
-
-/// Repeated sequence: `{ definitions-list }`
-#let repeated-sequence(content) = _wrap-op("{", "}", content)
-
-/// Grouped sequence: `( definitions-list )`
-#let grouped-sequence(content) = _wrap-op("(", ")", content)
-
-/// Terminal string: quoted literal text
-#let terminal-string(content) = context {
-  let state = _ebnf-state.get()
-  set text(font: state.mono-font) if state.mono-font != none
-  _styled(state.colors.at("terminal", default: none), content)
-}
-
-/// Meta-identifier: non-terminal reference (italic)
-#let meta-identifier(content) = context {
-  let state = _ebnf-state.get()
-  set text(font: state.mono-font) if state.mono-font != none
-  _styled(state.colors.at("nonterminal", default: none), emph(content))
-}
-
-/// Exception: `factor - exception` (excluding sequences)
-#let exception(a, b) = context {
-  let state = _ebnf-state.get()
-  set text(font: state.mono-font) if state.mono-font != none
-  [#a #_styled(state.colors.at("operator", default: none), "−") #b]
-}
-
-/// Single definition: `term , term , ...` (syntactic concatenation)
-#let single-definition(..items) = context {
-  let state = _ebnf-state.get()
-  set text(font: state.mono-font) if state.mono-font != none
-  let sep = [#_styled(state.colors.at("operator", default: none), ",") ]
-  items.pos().join(sep)
-}
-
-/// Syntactic factor: `integer * primary` (repetition count)
-#let syntactic-factor(count, content) = context {
-  let state = _ebnf-state.get()
-  set text(font: state.mono-font) if state.mono-font != none
-  [#_styled(state.colors.at("operator", default: none), str(count) + " ∗") #content]
-}
-
-/// Special sequence: `? ... ?` (implementation-defined)
-#let special-sequence(content) = _wrap-op("?", "?", content)
-
-/// Comment: `(* ... *)` (inline documentation)
-#let comment(content) = context {
-  let state = _ebnf-state.get()
-  _styled(state.colors.at("comment", default: none), [(\* #content \*)])
-}
-
-/// Empty sequence (epsilon): represents an empty production
-#let empty-sequence = context {
-  let state = _ebnf-state.get()
-  set text(font: state.mono-font) if state.mono-font != none
-  _styled(state.colors.at("operator", default: none), "ε")
-}
-
-/// Definitions list: alternative in a production with optional comment
-#let definitions-list(var, comment) = (var, comment)
-
-/// Syntax rule: production rule
-#let syntax-rule(lhs, delim: auto, ..rhs) = {
-  (lhs, delim, rhs.pos().flatten().chunks(2).map(c => (c.at(0), c.at(1, default: none))))
-}
-
-/// Syntax: renders an EBNF grammar as a formatted grid.
-///
-/// The grammar is displayed as a 4-column table with columns for:
-/// left-hand side (LHS), delimiter, right-hand side (RHS), and comments.
-/// Multiple alternatives for a production are shown on separate rows with `|` delimiters.
-/// Comments are rendered as ISO 14977 `(* ... *)` notation in the 4th column.
-///
-/// - mono-font (string, none): Font for grammar symbols. If `none`, uses document default.
-/// - colors (dictionary): Color scheme for syntax highlighting. Use `colors-plain` for no colors
-///   or `colors-colorful` (default). Keys: `lhs`, `nonterminal`, `terminal`, `operator`, `delim`, `comment`.
-/// - production-spacing (length): Extra vertical space between productions. Default: `0.5em`.
-/// - column-gap (length): Horizontal spacing between grid columns. Default: `0.75em`.
-/// - row-gap (length): Vertical spacing between grid rows. Default: `0.5em`.
-/// - body (syntax-rule): One or more production rules created with `syntax-rule()`.
-/// -> content
-#let syntax(
-  mono-font: none,
-  colors: colors-colorful,
-  production-spacing: _production-spacing,
-  column-gap: _column-gap,
-  row-gap: _row-gap,
-  ..body,
+#let _wrap(
+  body,
+  illumination: none,
+  qualifier: none,
+  bracket-type: none,
 ) = {
-  let (ok, err) = _validate-font(mono-font)
-  if not ok { return _error(err) }
+  if bracket-type == none {
+    _error(
+      "bracket-type must not be none, but got: " + repr(bracket-type),
+    )
+  }
 
-  let (ok, err) = _validate-colors(colors)
-  if not ok { return _error(err) }
+  let bracket = _get-config(_to-sym-key(bracket-type))
+  let open-bracket = bracket.open
+  let close-bracket = bracket.close
+  let result = open-bracket + body + close-bracket
 
-  let prods = body.pos()
-  let (ok, err) = _validate-prods(prods)
-  if not ok { return _error(err) }
+  if illumination != none {
+    result = _illuminate(result, type: illumination)
+  }
 
-  _ebnf-state.update((
-    mono-font: mono-font,
-    colors: colors,
-  ))
+  let qualifier-key = _to-sym-key(qualifier)
 
-  let cells = prods
-    .enumerate()
-    .map(((idx, prod)) => _prod-to-rows(idx, prod, production-spacing).flatten())
-    .join()
+  let qualifier-sym = if qualifier-key == none {
+    none
+  } else {
+    _get-config(qualifier-key)
+  }
 
-  grid(columns: 4, align: (left, center, left, left), column-gutter: column-gap, row-gutter: row-gap, ..cells)
+  if qualifier-sym != none {
+    result = result + qualifier-sym
+  }
+
+  result
+}
+
+#let _to-string(content) = {
+  if type(content) == str {
+    return content
+  } else if content.has("text") {
+    content.text
+  } else if content.has("children") {
+    content.children.map(to-string).join("")
+  } else if content.has("body") {
+    to-string(content.body)
+  } else if content == [ ] {
+    " "
+  } else {
+    ""
+  }
+}
+
+#let _to-illumination-key(illum) = {
+  if illum == none { none } else { "illum-" + illum }
+}
+
+#let mono(body) = {
+  let font = _get-config("font-monospaced")
+  let family = font.family
+  let size = font.size
+  text(font: family, size: size)[#body]
+}
+
+#let regular(body) = {
+  let font = _get-config("font-default")
+  let family = font.family
+  let size = font.size
+  text(font: family, size: size)[#body]
+}
+
+#let terminal(body, illumination: none) = {
+  let delimiter = _get-config("sym-delim")
+  mono(delimiter + body + delimiter)
+}
+
+#let code-example(code) = {
+  let brackets = _get-config(_to-sym-key("comment"))
+  let open-bracket = brackets.open
+  let close-bracket = brackets.close
+
+  let _code = _to-string(code)
+
+  open-bracket + " " + raw(_code, lang: "rust") + " " + close-bracket
+}
+
+#let qualified(body, illumination: none, qualifier: none) = {
+  let result = if qualifier == none or qualifier not in _qualifiers {
+    panic(
+      "Error: qualifier must be one of " + _qualifiers.keys().join(", ") + ", got: " + repr(qualifier),
+    )
+  } else {
+    body + super(_qualifiers.at(qualifier))
+  }
+
+  if illumination != none {
+    _illuminate(result, type: illumination)
+  } else {
+    result
+  }
+}
+
+#let meta-identifier(body) = {
+  let prod = _get-config(_to-sym-key("prod"))
+  strong(body) + " " + prod
+}
+
+#let grouped-sequence(body, illumination: none, qualifier: none) = {
+  let _body = if body.has("children") {
+    body.children.filter(it => it != [ ]).join(" | ")
+  } else {
+    body
+  }
+
+  _wrap(_body, illumination: illumination, qualifier: qualifier, bracket-type: "rounded")
+}
+
+#let optional-sequence(body, illumination: none, qualifier: none) = {
+  let _body = if body.has("children") {
+    body.children.filter(it => it != [ ]).join(" | ")
+  } else {
+    body
+  }
+
+  _wrap(_body, illumination: illumination, qualifier: qualifier, bracket-type: "square")
+}
+
+#let repeated-sequence(body, illumination: none, qualifier: none) = {
+  let _body = if body.has("children") {
+    body.children.filter(it => it != [ ]).join(" | ")
+  } else {
+    body
+  }
+
+  _wrap(_body, illumination: illumination, qualifier: qualifier, bracket-type: "curly")
+}
+
+#let special-sequence(body, illumination: none, qualifier: none) = {
+  let _body = if body.has("children") {
+    body.children.filter(it => it != [ ]).join(" | ")
+  } else {
+    body
+  }
+
+  _wrap(_body, illumination: illumination, qualifier: qualifier, bracket-type: "special")
+}
+
+#let single-definition(body, illumination: none, qualifier: none) = {
+  let illum = _to-illumination-key(illumination)
+  let qual = _to-sym-key(qualifier)
+
+  _validate-opt-key(qual)
+  _validate-opt-key(illum)
+
+  let result = (
+    emph(body) + if qual == none { none } else { _qualifiers.at(qual) }
+  )
+
+  let result = if qual == none {
+    emph(body)
+  } else {
+    qualified(body, illumination: illumination, qualifier: qual)
+  }
+
+  if illumination != none {
+    _illuminate(result, type: illumination)
+  } else {
+    result
+  }
+}
+
+#let syntax-rule(
+  meta-id: none,
+  example: none,
+  definition-list: none,
+) = context {
+  code-example(example)
+  linebreak()
+  meta-identifier(meta-id)
+
+  let indent = 1
+  for (i, item) in definition-list.enumerate() {
+    if type(item) == dictionary {
+      indent = 1 * item.indent
+    } else {
+      linebreak()
+
+      h(indent * 1em)
+
+      if type(item) == content {
+        _trim-content(item)
+      }
+    }
+  }
+}
+
+#let ebnf(
+  body,
+  definition-separator-symbol: _definition-separator-symbols.sym-vertical,
+  delimiter-symbol: _delimiter-symbols.sym-delim-3,
+  default-font: _fonts.font-default,
+  monospaced-font: _fonts.font-monospaced,
+) = {
+  _update-config("sym-separator", definition-separator-symbol)
+  _update-config("sym-delim", delimiter-symbol)
+  _update-config("font-default", default-font)
+  _update-config("font-monospaced", monospaced-font)
+
+  body
 }
