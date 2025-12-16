@@ -1,0 +1,37 @@
+#import "../ebnf.typ": *
+#import "_ebnf-test-utils.typ" : *
+#set page(paper: "a6", flipped: true)
+
+== `syntax-rule`
+
+#context [
+  #syntax-rule(
+    meta-id: [Function],
+    rule-example: [```rust fn main() { }```],
+    definition-list: (
+      (indent: 1),
+      [
+        #single-definition(illumination: "dimmed")[FunctionQualifiers]
+        #terminal[fn]
+        #single-definition[IDENTIFIER]
+        #single-definition(illumination: "dimmed", qualifier: "opt")[GenericParams]
+      ],
+      (indent: 2),
+      [
+        #terminal[(]
+        #single-definition(qualifier: "opt")[FunctionParameters]
+        #terminal[)]
+      ],
+      [
+        #single-definition(illumination: "dimmed", qualifier: "opt")[FunctionReturnType]
+        #single-definition(illumination: "dimmed", qualifier: "opt")[WhereClause]
+      ],
+      [
+        #grouped-sequence(
+          single-definition[BlockExpression],
+          terminal(illumination: "dimmed")[;]
+        )
+      ],
+    ),
+  )
+]
