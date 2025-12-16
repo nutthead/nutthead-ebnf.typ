@@ -1,9 +1,7 @@
 #import "../ebnf.typ" : code-example
 #import "_ebnf-test-utils.typ" : *
-#set page(paper: "a6", flipped: true)
+#set page(paper: "a6")
 
-== Test: `code-example`
+== `code-example`
 
-- Object: #context code-example[```rust fn main() { }```]
-- Kind: #context code-example[```rust fn main() { }```].kind
-- Value: #context code-example[```rust fn main() { }```].value
+#context code-example[```rust fn main() { }```]

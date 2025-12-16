@@ -2,17 +2,7 @@
 #import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `_trim-content`
-
-=== Input
-
-#test-rect[
-  ```typ
-  |#_trim-content[  Hello  ]|
-  ```
-]
-
-=== Output
+== `_trim-content`
 
 #test-rect[
   |#_trim-content[  Hello  ]|

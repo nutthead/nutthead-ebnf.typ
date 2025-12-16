@@ -1,18 +1,8 @@
 #import "../ebnf.typ" : _illuminations
-#import "ebnf-test-000-utils.typ" : *
+#import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `_illuminations`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #repr(_illuminations)
-  ```
-]
-
-=== Output
+== `_illuminations`
 
 #test-rect[
   #repr(_illuminations)

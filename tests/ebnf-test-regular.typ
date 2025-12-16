@@ -1,7 +1,7 @@
-#import "../ebnf.typ" : *
+#import "../ebnf.typ" : _regular
 #import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `regular`
+== `regular`
 
-#context regular[Hello, World!]
+#context _regular[Hello, World!]

@@ -2,17 +2,7 @@
 #import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `_to-font-key`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #repr(_to-font-key("foo"))
-  ```
-]
-
-=== Output
+== `_to-font-key`
 
 #test-rect[
   #repr(_to-font-key("foo"))

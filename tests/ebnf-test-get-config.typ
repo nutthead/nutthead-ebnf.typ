@@ -1,18 +1,8 @@
 #import "../ebnf.typ": _get-config, _update-config
-#import "ebnf-test-000-utils.typ": *
-#set page(paper: "a6", flipped: true)
+#import "_ebnf-test-utils.typ": *
+#set page(paper: "a6")
 
-== Test: `_get-config`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #context repr(_get-config("sym-prod"))
-  ```
-]
-
-=== Output
+== `_get-config`
 
 #test-rect[
   #context repr(_get-config("sym-prod"))

@@ -2,17 +2,7 @@
 #import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `_get-sym`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #context repr(_get-sym("curly"))
-  ```
-]
-
-=== Output
+== `_get-sym`
 
 #test-rect[
   #context repr(_get-sym("curly"))

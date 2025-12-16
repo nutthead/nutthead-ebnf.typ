@@ -1,18 +1,8 @@
 #import "../ebnf.typ": _qualifier-syms
-#import "ebnf-test-000-utils.typ" : *
+#import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `_qualifier-syms`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #repr(_qualifier-syms)
-  ```
-]
-
-=== Output
+== `_qualifier-syms`
 
 #test-rect[
   #repr(_qualifier-syms)

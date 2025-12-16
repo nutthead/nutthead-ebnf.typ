@@ -1,18 +1,8 @@
 #import "../ebnf.typ": _namespace
-#import "ebnf-test-000-utils.typ" : *
+#import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `_namespace`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #repr(_namespace)
-  ```
-]
-
-=== Output
+== `_namespace`
 
 #test-rect[
   #repr(_namespace)

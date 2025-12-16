@@ -1,7 +1,7 @@
-#import "../ebnf.typ" : *
+#import "../ebnf.typ" : _mono
 #import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `mono`
+== `_mono`
 
-#context mono("Hello, World!")
+#context _mono("Hello, World!")

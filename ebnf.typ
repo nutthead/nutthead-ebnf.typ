@@ -75,8 +75,7 @@
   let config = _configuration.get()
   let keys = config.keys()
   if key not in keys {
-    let keys = keys.join(", ")
-    _error("key must be one of " + keys + ", but got: " + repr(key))
+    _error("key must be one of " + keys.join(", ") + ", but got: " + repr(key))
   }
 }
 
@@ -91,13 +90,9 @@
 }
 
 #let _update-config(key, value) = {
-  if key == none {
-    _assert-some(name, "expected key to be some, but got: " + repr(name))
-  }
-
-  if (value == none) {
-    _assert-some(name, "expected value to be some, but got: " + repr(name))
-  }
+  _assert-some(key)
+  _assert-key(key)
+  _assert-some(value)
 
   _configuration.update(it => {
     it.insert(key, value)
@@ -124,11 +119,8 @@
 }
 
 #let _to-font-key(key) = {
-  if key == none {
-    _assert-some(key, "expected key to be some, but got: " + repr(key))
-  } else {
-    "font-" + key
-  }
+  _assert-some(key)
+  "font-" + key
 }
 
 #let _get-font(key) = {
@@ -159,22 +151,6 @@
   }
 }
 
-#let _to-string(content) = {
-  if type(content) == str {
-    return content
-  } else if content.has("text") {
-    content.text
-  } else if content.has("children") {
-    content.children.map(_to-string).join("")
-  } else if content.has("body") {
-    _to-string(content.body)
-  } else if content == [ ] {
-    " "
-  } else {
-    ""
-  }
-}
-
 #let _trim-str(input) = {
   while input.len() > 0 and input.first().match(_whitespace) != none {
     input = input.slice(1)
@@ -188,21 +164,21 @@
 }
 
 #let _trim-content(input) = {
-  if not input.has("children") {
-    return input
+  if input.has("children") {
+    let children = input.children
+
+    while children.len() > 0 and _is-space(children.first()) {
+      children = children.slice(1)
+    }
+
+    while children.len() > 0 and _is-space(children.last()) {
+      children = children.slice(0, children.len() - 1)
+    }
+
+    children.join()
+  } else {
+    input
   }
-
-  let children = input.children
-
-  while children.len() > 0 and _is-space(children.first()) {
-    children = children.slice(1)
-  }
-
-  while children.len() > 0 and _is-space(children.last()) {
-    children = children.slice(0, children.len() - 1)
-  }
-
-  children.join()
 }
 
 #let _trim(input) = {
@@ -251,10 +227,6 @@
   type(item) == dictionary and item.has("kind") and item.kind == "terminal"
 }
 
-#let _has-kind(item) = {
-  type(item) == dictionary and item.has("kind")
-}
-
 #let _mono(body) = {
   let font = _get-font("monospaced")
   let family = font.family
@@ -271,13 +243,8 @@
 
 #let terminal(body, illumination: none, qualifier: none) = {
   let delimiter = _get-sym("delim")
-  let value = if qualifier == none {
-    _mono(delimiter + body + delimiter)
-  } else {
-    _qualify(_mono(delimiter + body + delimiter), type: qualifier)
-  }
-
-  if illumination == none { value } else { _illuminate(value, type: illumination) }
+  let m = _mono(delimiter + body + delimiter)
+  _decorate(m, illumination-type: illumination, qualifier-type: qualifier)
 }
 
 #let code-example(raw) = {
@@ -366,16 +333,16 @@
   }
 }
 
- #let ebnf(
-   body,
-   definition-separator-symbol: _definition-separator-syms.sym-vertical,
-   delimiter-symbol: _delimiter-syms.sym-delim-3,
-   default-font: _fonts.font-default,
-   monospaced-font: _fonts.font-monospaced,
- ) = {
-   _update-config("sym-separator", definition-separator-symbol)
-   _update-config("sym-delim", delimiter-symbol)
-   _update-config("font-default", default-font)
-   _update-config("font-monospaced", monospaced-font)
-   body
- }
+#let ebnf(
+  body,
+  definition-separator-symbol: _definition-separator-syms.sym-vertical,
+  delimiter-symbol: _delimiter-syms.sym-delim-3,
+  default-font: _fonts.font-default,
+  monospaced-font: _fonts.font-monospaced,
+) = {
+  _update-config("sym-separator", definition-separator-symbol)
+  _update-config("sym-delim", delimiter-symbol)
+  _update-config("font-default", default-font)
+  _update-config("font-monospaced", monospaced-font)
+  body
+}

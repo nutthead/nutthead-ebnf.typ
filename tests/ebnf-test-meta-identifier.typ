@@ -2,6 +2,6 @@
 #import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `meta-identifier`
+== `meta-identifier`
 
 #context meta-identifier[Function]

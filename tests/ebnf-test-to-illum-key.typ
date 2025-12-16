@@ -2,17 +2,7 @@
 #import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `_to-illum-key`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #repr(_to-illum-key("foo"))
-  ```
-]
-
-=== Output
+== `_to-illum-key`
 
 #test-rect[
   #repr(_to-illum-key("foo"))

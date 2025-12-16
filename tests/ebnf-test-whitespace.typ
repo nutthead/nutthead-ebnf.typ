@@ -2,17 +2,7 @@
 #import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `_white-space`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #repr(_white-space)
-  ```
-]
-
-=== Output
+== `_white-space`
 
 #test-rect[
   #repr(_whitespace)

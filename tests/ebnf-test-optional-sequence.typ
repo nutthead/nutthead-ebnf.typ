@@ -2,7 +2,7 @@
 #import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `optional-sequence`
+== `optional-sequence`
 
 #context optional-sequence(
   single-definition[BlockExpression],

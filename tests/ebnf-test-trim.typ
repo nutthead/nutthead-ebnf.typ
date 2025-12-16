@@ -2,19 +2,7 @@
 #import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6")
 
-== Test: `_trim`
-
-=== Input
-
-#test-rect[
-  ```typ
-  |#_trim(" Hello  String ")| \
-  |#_trim[ Hello Content ]| \
-  |#_trim[ #[ Hello ]-#[ World ] ]|
-  ```
-]
-
-=== Output
+== `_trim`
 
 #test-rect[
   |#_trim(" Hello  String ")| \

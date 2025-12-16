@@ -1,22 +1,11 @@
 #import "../ebnf.typ": _configuration
-#import "ebnf-test-000-utils.typ": *
+#import "_ebnf-test-utils.typ": *
 #set page(paper: "a6")
 
-== Test `_configuration`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #repr(_configuration)
-  ```
-]
-
-
-=== Output
+== `_configuration`
 
 #[
-  #set text(size: 7pt)
+  #set text(size: 8pt)
   #test-rect[
     #repr(_configuration)
   ]

@@ -2,18 +2,7 @@
 #import "_ebnf-test-utils.typ" : *
 #set page(paper: "a6", flipped: true)
 
-== Test: `_get-font`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #context repr(_get-font("default")) \
-  #context repr(_get-font("monospaced"))
-  ```
-]
-
-=== Output
+== `_get-font`
 
 #test-rect[
   #context repr(_get-font("default")) \

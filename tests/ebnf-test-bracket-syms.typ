@@ -1,18 +1,8 @@
 #import "../ebnf.typ": _bracket-syms
-#import "ebnf-test-000-utils.typ" : *
-#set page(paper: "a6", flipped: true)
+#import "_ebnf-test-utils.typ" : *
+#set page(paper: "a6")
 
-== Test: `_bracket-syms`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #repr(_bracket-syms)
-  ```
-]
-
-=== Output
+== `_bracket-syms`
 
 #test-rect[
   #repr(_bracket-syms)

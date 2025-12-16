@@ -1,18 +1,8 @@
 #import "../ebnf.typ" : _colors
-#import "ebnf-test-000-utils.typ" : *
-#set page(paper: "a6", flipped: true)
+#import "_ebnf-test-utils.typ" : *
+#set page(paper: "a6")
 
-== Test: `_colors`
-
-=== Input
-
-#test-rect[
-  ```typ
-  #repr(_colors)
-  ```
-]
-
-=== Output
+== `_colors`
 
 #test-rect[
   #repr(_colors)
